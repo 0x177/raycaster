@@ -7,6 +7,7 @@ const MAPH:i32 = 8;
 const SIZE:i32 = 64;
 const PI2:f32 = PI/2.0;
 const PI3:f32 = 3.0*PI/2.0;
+const DR:f32 = 0.01745329;
 
 const MAP: &'static [i32] = &[
     1,1,1,1,1,1,1,1,
@@ -54,14 +55,16 @@ fn draw_map_2d() {
 }
 
 fn draw_rays_3d(pa:f32,px:f32,py:f32) {
-    let (mut r, mut mx,mut my,mut mp,mut dof): (i32,i32,i32,i32,i32) = (0,0,0,0,0); // i32
+    let (mut r, mut mx,mut my,mut mp,mut dof,mut dis_f): (i32,i32,i32,i32,i32,i32) = (0,0,0,0,0,0); // i32
     let (mut rx,mut ry,mut ra,mut xo,mut yo): (f32,f32,f32,f32,f32) = (0.0,0.0,0.0,0.0,0.0); // f32
+    ra=pa-DR*30.0;
+    if ra <0.0 {ra+=2.0*PI}
+    if ra>2.0*PI {ra-=2.0*PI}
 
-    ra = pa;
 
     r = 0;
 
-    while r < 1 {
+    while r < 60 {
 
         //check hor lines
                 
@@ -101,12 +104,18 @@ fn draw_rays_3d(pa:f32,px:f32,py:f32) {
             else {rx += xo; ry += yo; dof += 1}
         }
 
-        if dis_v>dis_h {rx=vx;ry=vy}
-        if dis_h>dis_v {rx=hx;ry=hy}
+        if dis_v<dis_h {rx=vx;ry=vy;dis_f=dis_v as i32}
+        if dis_h<dis_v {rx=hx;ry=hy;dis_f=dis_h as i32}
 
         draw_line(px,py,rx,ry,5.0,RED);
+        if dis_f == 0 {dis_f = 1}
 
+        let mut line_h = (SIZE as f32*320.0)/dis_f as f32; if line_h> 320.0 {line_h=320.0}
+        draw_line(r as f32*8.0+530.0,0.0,r as f32*8.0+530.0,line_h as f32,8.0,RED);
         
+        ra += DR;
+        if ra>PI {ry = ((py as i32>>6)<<6) as f32 - 0.0001; rx=(py-ry)*atan+px;yo=-64.0;xo=-yo*atan}
+        if ra<PI {ry = ((py as i32>>6)<<6) as f32 + 64.0; rx=(py-ry)*atan+px;yo= 64.0;xo=-yo*atan}
         r += 1;
     }
 }
