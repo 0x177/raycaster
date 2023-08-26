@@ -17,6 +17,10 @@ fn window_conf() -> Conf {
 #[macroquad::main(window_conf)]
 async fn main () {
     next_frame().await;
+    let wall_texture = Image::from_file_with_format(
+        include_bytes!("assets/wall.png"),
+        Some(ImageFormat::Png),
+    );
     let mut player_x: f32 = 1.0;
     let mut player_y: f32 = 1.0;
     let mut player_a: f32 = 0.0;
@@ -31,19 +35,20 @@ async fn main () {
         1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
         1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
         1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-        1,0,0,0,0,0,010,0,0,0,0,0,0,0,1,
-        1,0,0,0,0,0,010,0,0,0,0,0,0,0,1,
-        1,0,0,0,0,0,010,0,0,0,0,0,0,0,1,
+        1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,
+        1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,
+        1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,
         1,0,0,0,0,0,0,0,0,1,1,1,0,0,0,1,
         1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,
         1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
         1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
         1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,1,
         1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,1,
-        1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,1,
+        1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
         1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     ];
     let depth = 16.0;
+    let player_speed = 5.0;
     loop {
         clear_background(BLACK);
 
@@ -54,28 +59,54 @@ async fn main () {
             player_a += 1.0 * get_frame_time();
         }
         if is_key_down(KeyCode::W) {
-            player_x += 1.0 * player_a.sin() * 5.0 *get_frame_time();
-            player_y += 1.0 * player_a.cos() * 5.0 *get_frame_time();
+            player_x += 1.0 * player_a.sin() * player_speed *get_frame_time();
+            player_y += 1.0 * player_a.cos() * player_speed *get_frame_time();
 
             let index = (player_y as i32 * map_width + player_x as i32) as usize;
 
             if (index as i32) < map_width*map_height {
                 if map[index as usize] == 1 {
-                    player_x -= player_a.sin() * 5.0 * get_frame_time();
-                    player_y -= player_a.cos() * 5.0 * get_frame_time();
+                    player_x -= player_a.sin() * player_speed * get_frame_time();
+                    player_y -= player_a.cos() * player_speed * get_frame_time();
                 } 
             }
         }
         if is_key_down(KeyCode::S) {
-            player_x -= 1.0 * player_a.sin() * 5.0 *get_frame_time();
-            player_y -= 1.0 * player_a.cos() * 5.0 *get_frame_time();
+            player_x -= 1.0 * player_a.sin() * player_speed *get_frame_time();
+            player_y -= 1.0 * player_a.cos() * player_speed *get_frame_time();
 
             let index = (player_y as i32 * map_width + player_x as i32) as usize;
 
             if (index as i32) < map_width*map_height {
                 if map[index] == 1 {
-                    player_x += player_a.sin() * 5.0 * get_frame_time();
-                    player_y += player_a.cos() * 5.0 * get_frame_time();
+                    player_x += player_a.sin() * player_speed * get_frame_time();
+                    player_y += player_a.cos() * player_speed * get_frame_time();
+                } 
+            }
+        }
+        if is_key_down(KeyCode::Q) {
+            player_x -= 1.0 * player_a.cos() * player_speed *get_frame_time();
+            player_y += 1.0 * player_a.sin() * player_speed *get_frame_time();
+
+            let index = (player_y as i32 * map_width + player_x as i32) as usize;
+
+            if (index as i32) < map_width*map_height {
+                if map[index] == 1 {
+                    player_x += player_a.cos() * player_speed * get_frame_time();
+                    player_y -= player_a.sin() * player_speed * get_frame_time();
+                } 
+            }
+        }
+        if is_key_down(KeyCode::E) {
+            player_x += 1.0 * player_a.cos() * player_speed *get_frame_time();
+            player_y -= 1.0 * player_a.sin() * player_speed *get_frame_time();
+
+            let index = (player_y as i32 * map_width + player_x as i32) as usize;
+
+            if (index as i32) < map_width*map_height {
+                if map[index] == 1 {
+                    player_x -= player_a.cos() * player_speed * get_frame_time();
+                    player_y += player_a.sin() * player_speed * get_frame_time();
                 } 
             }
         }
