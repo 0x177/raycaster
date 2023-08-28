@@ -2,7 +2,7 @@ use libm::atan2;
 use macroquad::prelude::*;
 use std::f32::consts::PI;
 
-const SCALAR: f32 = 8.0;
+const SCALAR: f32 = 3.0;
 
 fn window_conf() -> Conf {
     Conf {
@@ -25,9 +25,10 @@ async fn main() {
     let map_height: i32 = 16;
     let map_width: i32 = 16;
     let fov = PI / 4.0;
-    let screen_width = screen_width();
-    let screen_height = screen_height();
-    let mut map = vec![
+    let screen_width = screen_width()/SCALAR;
+    let screen_height = screen_height()/SCALAR;
+    let mut buffer = Image::gen_image_color((screen_width) as u16,(screen_height) as u16,BLACK);
+    let map = vec![
         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
         1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 
         1, 0, 0, 0, 0, 0, 0, 0, 2, 1, 1, 1, 1, 1, 0, 1, 
@@ -116,7 +117,8 @@ async fn main() {
             break;
         }
 
-        for x in (0..screen_width as i32).step_by(SCALAR as usize) {
+        // for x in (0..screen_width as i32).step_by(SCALAR as usize) {
+        for x in 0..(screen_width) as i32-1 {
             let ray_angle = (player_a - fov /2.0) + (x as f32 / screen_width * fov);
             let mut distance_to_wall = 0.0;
             let mut hit_wall = false;
@@ -174,9 +176,10 @@ async fn main() {
             let ceiling = (screen_height / 2.0) - screen_height / distance_to_wall;
             let floor = screen_height - ceiling;
 
-            for y in (0..(screen_height) as i32).step_by(SCALAR as usize) {
+            // for y in (0..(screen_height) as i32).step_by(SCALAR as usize) {
+            for y in 0..(screen_height) as i32 {
                 if (y as f32) < ceiling {
-                    draw_rectangle(x as f32, y as f32, SCALAR, SCALAR, BLACK);
+                    buffer.set_pixel(x as u32, y as u32, BLACK);
                 } else if y as f32 > ceiling && y as f32 <= floor {
                     let sample_y = (y as f32 - ceiling as f32) / (floor - ceiling);
                     // if ((sample_y * 32.0 + sample_x) as u32) < 1022 {
@@ -184,14 +187,19 @@ async fn main() {
                         .as_ref()
                         .expect("cant get texture thingy idk why")
                         .get_pixel((sample_x * 31.0) as u32, ((sample_y+val as f32) * 31.0) as u32);
-                    draw_rectangle(x as f32, y as f32, SCALAR, SCALAR, col);
+                    buffer.set_pixel(x as u32, y as u32, col);
 
                     // }
                 } else {
-                    draw_rectangle(x as f32, y as f32, SCALAR, SCALAR, GREEN);
+                    buffer.set_pixel(x as u32, y as u32, GREEN);
                 }
             }
         }
+        draw_texture_ex(&Texture2D::from_image(&buffer),0.0,0.0,WHITE,DrawTextureParams {
+                dest_size: Some(vec2(screen_width*SCALAR, screen_height*SCALAR)),
+                ..Default::default()
+            },
+        );
         draw_text(&get_fps().to_string(),20.0,20.0,32.0,GREEN);
 
         next_frame().await
