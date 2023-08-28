@@ -2,7 +2,7 @@ use libm::atan2;
 use macroquad::prelude::*;
 use std::f32::consts::PI;
 
-const SCALAR: f32 = 6.0;
+const SCALAR: f32 = 8.0;
 
 fn window_conf() -> Conf {
     Conf {
@@ -30,18 +30,18 @@ async fn main() {
     let mut map = vec![
         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
         1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 
-        1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 
-        1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-        1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 
+        1, 0, 1, 0, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 0, 1, 
+        1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1,
+        1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 
+        1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 
         1, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 
-        1, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 
-        1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 
+        1, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 
         1, 0, 1, 0, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 
         1, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 
         1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 
-        1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 
-        1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 
-        1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 1, 
+        1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 
+        1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, 
+        1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 
         1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     ];
@@ -51,10 +51,10 @@ async fn main() {
         clear_background(BLACK);
 
         if is_key_down(KeyCode::A) {
-            player_a -= 1.0 * get_frame_time();
+            player_a -= 2.0 * get_frame_time();
         }
         if is_key_down(KeyCode::D) {
-            player_a += 1.0 * get_frame_time();
+            player_a += 2.0 * get_frame_time();
         }
         if is_key_down(KeyCode::W) {
             player_x += 1.0 * player_a.sin() * player_speed * get_frame_time();
@@ -113,16 +113,17 @@ async fn main() {
         }
 
         for x in (0..screen_width as i32).step_by(SCALAR as usize) {
-            let ray_angle = (player_a - fov / 2.0) + (x as f32 / screen_width * fov);
+            let ray_angle = (player_a - fov /2.0) + (x as f32 / screen_width * fov);
             let mut distance_to_wall = 0.0;
             let mut hit_wall = false;
             let eye_x = ray_angle.sin();
             let eye_y = ray_angle.cos();
+            let mut val = 1;
 
             let mut sample_x = 0.0;
 
             while !hit_wall && distance_to_wall < depth {
-                distance_to_wall += 0.1;
+                distance_to_wall += 0.2;
 
                 let test_x = (player_x + eye_x * distance_to_wall) as i32;
                 let test_y = (player_y + eye_y * distance_to_wall) as i32;
@@ -131,8 +132,9 @@ async fn main() {
                     hit_wall = true;
                     distance_to_wall = depth;
                 } else {
-                    if map[(test_y * map_width + test_x) as usize] == 1 {
+                    if map[(test_y * map_width + test_x) as usize] >= 1 {
                         hit_wall = true;
+                        val = map[(test_y *map_width + test_x) as usize] -1;
 
                         let block_mid_x = test_x as f32 + 0.5;
                         let block_mid_y = test_y as f32 + 0.5;
@@ -173,8 +175,9 @@ async fn main() {
                         let col = wall_texture
                             .as_ref()
                             .expect("cant get texture thingy idk why")
-                            .get_pixel((sample_x * 31.0) as u32, (sample_y * 31.0) as u32);
+                            .get_pixel((sample_x * 31.0) as u32, ((sample_y+val as f32) * 31.0) as u32);
                         draw_rectangle(x as f32, y as f32, SCALAR, SCALAR, col);
+
                     }
                 } else {
                     draw_rectangle(x as f32, y as f32, SCALAR, SCALAR, GREEN);
