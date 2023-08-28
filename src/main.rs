@@ -29,27 +29,30 @@ async fn main() {
     let screen_height = screen_height();
     let mut map = vec![
         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
-        1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 
-        1, 0, 1, 0, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 0, 1, 
-        1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1,
-        1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 
-        1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 
-        1, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 
-        1, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 
-        1, 0, 1, 0, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 
-        1, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 
-        1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 
-        1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 
-        1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, 
-        1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 
+        1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 
+        1, 0, 0, 0, 0, 0, 0, 0, 2, 1, 1, 1, 1, 1, 0, 1, 
+        1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1,
+        1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 
+        1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 
+        1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 
+        1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 
+        1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 
+        1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 
+        1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 
+        1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, 1, 1, 
+        1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, 
+        1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1, 
         1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     ];
+    //maximum distance ray can travel
     let depth = 16.0;
     let player_speed = 5.0;
+
     loop {
         clear_background(BLACK);
 
+        //rotation
         if is_key_down(KeyCode::A) {
             player_a -= 2.0 * get_frame_time();
         }
@@ -82,6 +85,7 @@ async fn main() {
                 }
             }
         }
+        //strafing
         if is_key_down(KeyCode::Q) {
             player_x -= 1.0 * player_a.cos() * player_speed * get_frame_time();
             player_y += 1.0 * player_a.sin() * player_speed * get_frame_time();
@@ -118,13 +122,17 @@ async fn main() {
             let mut hit_wall = false;
             let eye_x = ray_angle.sin();
             let eye_y = ray_angle.cos();
+            //stores offset for the texture. this is used to allow for easily using multiple wall textures
+            //not the best variable name.
             let mut val = 1;
 
+            //the x value for the sampler used for texturing
             let mut sample_x = 0.0;
 
             while !hit_wall && distance_to_wall < depth {
-                distance_to_wall += 0.2;
+                distance_to_wall += 0.1;
 
+                //get the player's map space location 
                 let test_x = (player_x + eye_x * distance_to_wall) as i32;
                 let test_y = (player_y + eye_y * distance_to_wall) as i32;
 
@@ -171,35 +179,21 @@ async fn main() {
                     draw_rectangle(x as f32, y as f32, SCALAR, SCALAR, BLACK);
                 } else if y as f32 > ceiling && y as f32 <= floor {
                     let sample_y = (y as f32 - ceiling as f32) / (floor - ceiling);
-                    if ((sample_y * 32.0 + sample_x) as u32) < 1022 {
-                        let col = wall_texture
-                            .as_ref()
-                            .expect("cant get texture thingy idk why")
-                            .get_pixel((sample_x * 31.0) as u32, ((sample_y+val as f32) * 31.0) as u32);
-                        draw_rectangle(x as f32, y as f32, SCALAR, SCALAR, col);
+                    // if ((sample_y * 32.0 + sample_x) as u32) < 1022 {
+                    let col = wall_texture
+                        .as_ref()
+                        .expect("cant get texture thingy idk why")
+                        .get_pixel((sample_x * 31.0) as u32, ((sample_y+val as f32) * 31.0) as u32);
+                    draw_rectangle(x as f32, y as f32, SCALAR, SCALAR, col);
 
-                    }
+                    // }
                 } else {
                     draw_rectangle(x as f32, y as f32, SCALAR, SCALAR, GREEN);
                 }
             }
         }
+        draw_text(&get_fps().to_string(),20.0,20.0,32.0,GREEN);
 
         next_frame().await
     }
-}
-
-fn sort_dist(p: &mut Vec<Vec2>) -> Vec<Vec2> {
-    for i in 0..p.len() {
-        for j in 0..p.len() {
-            if p[i as usize].x < p[j as usize].x {
-                let temp = p[j as usize];
-
-                p[j as usize] = p[i as usize];
-                p[i as usize] = temp;
-            }
-        }
-    }
-
-    return p.clone();
 }
