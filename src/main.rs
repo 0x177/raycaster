@@ -6,7 +6,7 @@ const SCALAR: f32 = 6.0;
 
 fn window_conf() -> Conf {
     Conf {
-        window_title: ":3".to_owned(),
+        window_title: "raycaster".to_owned(),
         // window_height: 480,
         // window_width: 640,
         fullscreen: true,
