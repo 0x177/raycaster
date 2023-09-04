@@ -1,8 +1,11 @@
+//TODO: remove unnecesery type casting
+
 use libm::atan2;
 use macroquad::prelude::*;
 use std::f32::consts::PI;
+// mod images;
 
-const SCALAR: f32 = 3.0;
+const SCALAR: f32 = 4.0;
 
 fn window_conf() -> Conf {
     Conf {
@@ -14,11 +17,31 @@ fn window_conf() -> Conf {
     }
 }
 
+struct SceneObject {
+    pos: Vec2,
+    index: usize,    
+}
+impl SceneObject {
+    fn new(pos:Vec2,index:usize) -> Self {
+        Self {
+            pos,
+            index,
+        }
+    }
+}
+
 #[macroquad::main(window_conf)]
 async fn main() {
     next_frame().await;
     let wall_texture =
         Image::from_file_with_format(include_bytes!("../assets/wall.png"), Some(ImageFormat::Png));
+
+    let object_sprite_vec = vec![
+        Image::from_file_with_format(include_bytes!("../assets/wall.png"), Some(ImageFormat::Png)),
+    ];
+    let object_list = vec![
+        SceneObject::new(Vec2::new(2.5,3.5),0),
+    ];
     let mut player_x: f32 = 1.0;
     let mut player_y: f32 = 1.0;
     let mut player_a: f32 = 0.0;
@@ -30,13 +53,13 @@ async fn main() {
     let mut buffer = Image::gen_image_color((screen_width) as u16,(screen_height) as u16,BLACK);
     let map = vec![
         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
-        1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 
-        1, 0, 0, 0, 0, 0, 0, 0, 2, 1, 1, 1, 1, 1, 0, 1, 
-        1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1,
-        1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 
-        1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 
-        1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 
-        1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 
+        1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 
+        1, 0, 1, 0, 0, 0, 0, 0, 2, 1, 1, 1, 1, 1, 0, 1, 
+        1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1,
+        1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 
+        1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 
+        1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 
+        1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 
         1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 
         1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 
         1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 
@@ -191,17 +214,74 @@ async fn main() {
 
                     // }
                 } else {
+                    // let val 
+                    // let col = wall_texture
+                    //     .as_ref()
+                    //     .expect("cant get texture thingy idk why")
+                    //     .get_pixel((tx * 31.0) as u32, ((ty+val as f32) * 31.0) as u32);
+                    // buffer.set_pixel(x as u32, y as u32, col);
                     buffer.set_pixel(x as u32, y as u32, GREEN);
                 }
             }
+            for object in &object_list {
+                let vec = Vec2::new(object.pos.x-player_x,object.pos.y-player_y);
+                let distance_from_player = (vec.x*vec.x+vec.y*vec.y).sqrt();
+
+                let eye = Vec2::new(player_a.sin(),player_a.cos());
+                let mut object_angle = libm::atan2(eye.y as f64,eye.x as f64) - libm::atan2(vec.y as f64,vec.x as f64);
+
+                if object_angle < -std::f64::consts::PI {
+                    object_angle += 2.0 * std::f64::consts::PI;
+                }
+                if object_angle > std::f64::consts::PI {
+                    object_angle -= 2.0 * std::f64::consts::PI;
+                }
+
+                let in_player_fov = object_angle.abs() < (fov /2.0) as f64;
+
+                if in_player_fov && distance_from_player >= 0.5 && distance_from_player < depth {
+                    let object_top = (screen_height / 2.0) - screen_height / distance_to_wall as f32;
+                    let object_bottom = screen_height - object_top;
+                    let object_height = object_bottom - object_top;
+                    let object_aspect_ratio = object_bottom-object_top;
+                    let object_width = object_height / object_aspect_ratio;
+
+                    let middle_of_object = (0.5 * (object_angle/(fov/2.0) as f64) + 0.5) * screen_width as f64;
+
+                    for lx in 0..object_width as i32 {
+                        for ly in 0..(object_height-100.0) as i32 {
+                            //tempo
+                            let val = 0;
+                            let sample_x = lx as f32/object_width;
+                            let sample_y = ly as f32/object_height;
+                            let object_column = (middle_of_object as f32 + lx as f32- (object_width/2.0)) as i32;
+                            let col = object_sprite_vec[object.index]
+                                .as_ref()
+                                .expect("cant get texture thingy idk why")
+                                .get_pixel((sample_x * 31.0) as u32, ((sample_y+val as f32) * 31.0) as u32);
+
+                            if object_column >= 0 && object_column < screen_width as i32 {//&& ((object_top as u32+ly as u32)*(screen_width as i32+object_column) as u32) < (screen_width * screen_height) as u32 {
+                                // println!("{} {}",object_top as u32,ly);
+                                buffer.set_pixel(object_column as u32,object_top as u32+ ly as u32,col)
+                                // buffer.set_pixel(object_column as u32,0,col)
+                            }
+                        }
+                    }
+                }
+            }
         }
-        draw_texture_ex(&Texture2D::from_image(&buffer),0.0,0.0,WHITE,DrawTextureParams {
+
+        let mut buffer_texture = Texture2D::from_image(&buffer);
+        buffer_texture.set_filter(FilterMode::Nearest);
+        // buffer = images::nearest(screen_width as i32,screen_height as i32,(screen_width*SCALAR) as i32,(screen_height*SCALAR) as i32,&buffer);
+        draw_texture_ex(&buffer_texture,0.0,0.0,WHITE,DrawTextureParams {
                 dest_size: Some(vec2(screen_width*SCALAR, screen_height*SCALAR)),
                 ..Default::default()
             },
         );
-        draw_text(&get_fps().to_string(),20.0,20.0,32.0,GREEN);
+        // draw_text(&get_fps().to_string(),20.0,20.0,32.0,GREEN);
 
         next_frame().await
     }
 }
+
