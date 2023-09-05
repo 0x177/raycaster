@@ -5,7 +5,7 @@ use macroquad::prelude::*;
 use std::f32::consts::PI;
 // mod images;
 
-const SCALAR: f32 = 4.0;
+const SCALAR: f32 = 16.0;
 
 fn window_conf() -> Conf {
     Conf {
@@ -37,10 +37,10 @@ async fn main() {
         Image::from_file_with_format(include_bytes!("../assets/wall.png"), Some(ImageFormat::Png));
 
     let object_sprite_vec = vec![
-        Image::from_file_with_format(include_bytes!("../assets/wall.png"), Some(ImageFormat::Png)),
+        Image::from_file_with_format(include_bytes!("../assets/face.png"), Some(ImageFormat::Png)),
     ];
     let object_list = vec![
-        SceneObject::new(Vec2::new(2.5,3.5),0),
+        SceneObject::new(Vec2::new(8.5,8.5),0),
     ];
     let mut player_x: f32 = 1.0;
     let mut player_y: f32 = 1.0;
@@ -199,33 +199,26 @@ async fn main() {
             let ceiling = (screen_height / 2.0) - screen_height / distance_to_wall;
             let floor = screen_height - ceiling;
 
-            // for y in (0..(screen_height) as i32).step_by(SCALAR as usize) {
             for y in 0..(screen_height) as i32 {
                 if (y as f32) < ceiling {
                     buffer.set_pixel(x as u32, y as u32, BLACK);
                 } else if y as f32 > ceiling && y as f32 <= floor {
                     let sample_y = (y as f32 - ceiling as f32) / (floor - ceiling);
-                    // if ((sample_y * 32.0 + sample_x) as u32) < 1022 {
+                    if ((sample_y * 32.0 + sample_x) as u32) < 1022 {
                     let col = wall_texture
                         .as_ref()
                         .expect("cant get texture thingy idk why")
                         .get_pixel((sample_x * 31.0) as u32, ((sample_y+val as f32) * 31.0) as u32);
                     buffer.set_pixel(x as u32, y as u32, col);
 
-                    // }
+                    }
                 } else {
-                    // let val 
-                    // let col = wall_texture
-                    //     .as_ref()
-                    //     .expect("cant get texture thingy idk why")
-                    //     .get_pixel((tx * 31.0) as u32, ((ty+val as f32) * 31.0) as u32);
-                    // buffer.set_pixel(x as u32, y as u32, col);
                     buffer.set_pixel(x as u32, y as u32, GREEN);
                 }
             }
             for object in &object_list {
                 let vec = Vec2::new(object.pos.x-player_x,object.pos.y-player_y);
-                let distance_from_player = (vec.x*vec.x+vec.y*vec.y).sqrt();
+                let distance_from_player = ((vec.x*vec.x)+(vec.y*vec.y)).sqrt();
 
                 let eye = Vec2::new(player_a.sin(),player_a.cos());
                 let mut object_angle = libm::atan2(eye.y as f64,eye.x as f64) - libm::atan2(vec.y as f64,vec.x as f64);
@@ -240,16 +233,16 @@ async fn main() {
                 let in_player_fov = object_angle.abs() < (fov /2.0) as f64;
 
                 if in_player_fov && distance_from_player >= 0.5 && distance_from_player < depth {
-                    let object_top = (screen_height / 2.0) - screen_height / distance_to_wall as f32;
+                    let object_top = (screen_height / 2.0) - screen_height / distance_from_player;
                     let object_bottom = screen_height - object_top;
                     let object_height = object_bottom - object_top;
-                    let object_aspect_ratio = object_bottom-object_top;
+                    let object_aspect_ratio = 32.0/32.0;
                     let object_width = object_height / object_aspect_ratio;
 
                     let middle_of_object = (0.5 * (object_angle/(fov/2.0) as f64) + 0.5) * screen_width as f64;
 
                     for lx in 0..object_width as i32 {
-                        for ly in 0..(object_height-100.0) as i32 {
+                        for ly in 0..(object_height) as i32 {
                             //tempo
                             let val = 0;
                             let sample_x = lx as f32/object_width;
@@ -260,10 +253,8 @@ async fn main() {
                                 .expect("cant get texture thingy idk why")
                                 .get_pixel((sample_x * 31.0) as u32, ((sample_y+val as f32) * 31.0) as u32);
 
-                            if object_column >= 0 && object_column < screen_width as i32 {//&& ((object_top as u32+ly as u32)*(screen_width as i32+object_column) as u32) < (screen_width * screen_height) as u32 {
-                                // println!("{} {}",object_top as u32,ly);
-                                buffer.set_pixel(object_column as u32,object_top as u32+ ly as u32,col)
-                                // buffer.set_pixel(object_column as u32,0,col)
+                            if object_column > 0 && object_column < screen_width as i32 {
+                                buffer.set_pixel(object_column as u32,object_top as u32+ly as u32,col);
                             }
                         }
                     }
